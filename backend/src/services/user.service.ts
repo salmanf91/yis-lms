@@ -2,18 +2,23 @@ import bcrypt from "bcrypt";
 import { UserModel } from "../models/user.model";
 
 const SALT_ROUNDS = 10;
+
+type UserRole = "ADMIN" | "HOD" | "TEACHER";
+
+interface CreateUserInput {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+}
+
 export async function createUser(
     {
         name, 
         email,
         password, 
         role,
-    } : {
-        name: string;
-        email: string;
-        password: string;
-        role: "ADMIN" | "HOD" | "TEACHER",
-    }
+    } : CreateUserInput
 ) {
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
 
@@ -29,16 +34,13 @@ export async function createUser(
 }
 
 export async function getUserCount () {
-    const userCount = await UserModel.countDocuments();
-    return userCount;
+    return UserModel.countDocuments();
 }
 
 export async function findActiveUserByEmail(email: string) {
-    const existing = await UserModel.findOne({email, isActive: true })
-    return existing;
+    return UserModel.findOne({email, isActive: true })
 }
 
 export async function findUserByEmail(email: string) {
-    const user = await UserModel.findOne({email})
-    return user;
+    return UserModel.findOne({email})
 }

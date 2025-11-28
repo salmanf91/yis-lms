@@ -2,8 +2,10 @@ import express from "express";
 import cors from "cors";
 import { connectDb } from "./config/db";
 import { PORT } from "./config/env";
-import  authRoutes from "./routes/auth.routes";
+import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
+import lookupRoutes from "./routes/lookup.routes";
+import  curriculumRoutes from "./routes/curriculum.routes";
 
 async function main() {
     await connectDb();
@@ -19,6 +21,8 @@ async function main() {
 
     app.use('/api/auth', authRoutes);
     app.use('/api/users', userRoutes);
+    app.use('/api/lookup', lookupRoutes);
+    app.use('/api/curriculum', curriculumRoutes);
 
     app.listen(PORT, () => {
         console.log(`Server listening on PORT ${PORT}`)
