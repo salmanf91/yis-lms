@@ -44,7 +44,7 @@ export async function register( req: Request, res: Response) {
             });
 
             return sendResponse(res, 200, true, "Admin Registered Successfully", {
-                id: user._id,
+                userId: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role
@@ -72,7 +72,7 @@ export async function register( req: Request, res: Response) {
         });
 
         return sendResponse(res, 201, true, "User registered succesfully", {
-            id: user._id,
+            userId: user._id,
             name: user.name,
             email: user.email,
             role: user.role
@@ -107,9 +107,12 @@ export async function login(req: Request, res:Response) {
             return sendResponse(res, 400, false, "Email and Password are required");
         }
 
-        const user = await findActiveUserByEmail(email)
+        const user = await findUserByEmail(email)
         if(!user) {
             return sendResponse(res, 401, false, "Invalid Credentials");
+        }
+        if (!user.isActive) {
+            return sendResponse(res, 403, false, "Your account has been deactivated. Please contact your administrator.");
         }
 
         const match = await bcrypt.compare(password, user.passwordHash)
@@ -126,7 +129,7 @@ export async function login(req: Request, res:Response) {
         return sendResponse(res, 200, true, "Login Successfull", {
             token,
             user: {
-                id: user._id,
+                userId: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role

@@ -31,4 +31,9 @@ const roasterSchema = new Schema<RoasterDocumnet> (
     }
 )
 
+// Compound indexes for common query patterns
+roasterSchema.index({ isActive: 1, gradeId: 1, section: 1 });
+roasterSchema.index({ isActive: 1, teacherId: 1 });
+roasterSchema.index({ isActive: 1, gradeId: 1, subjectId: 1 });
+
 export const RoasterModel = model<RoasterDocumnet>("Roaster", roasterSchema);

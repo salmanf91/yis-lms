@@ -5,12 +5,13 @@ import { createLookupHandler, listLookupHandler, updateLookupHandler, deleteLook
 
 const router = Router();
 
-router.use(authMiddleware, isAdmin);
+// Let anyone logged in read the lookups
+router.get("/all", authMiddleware, getAllLookupHandler);
+router.get("/:type", authMiddleware, listLookupHandler);
 
-router.post("/", createLookupHandler);
-router.get("/all", getAllLookupHandler);
-router.get("/:type", listLookupHandler);
-router.put("/:id", updateLookupHandler);
-router.delete("/:id", deleteLookupHandler);
+// Keep modifying routes strictly for Admins
+router.post("/", authMiddleware, isAdmin, createLookupHandler);
+router.put("/:id", authMiddleware, isAdmin, updateLookupHandler);
+router.delete("/:id", authMiddleware, isAdmin, deleteLookupHandler);
 
 export default router;

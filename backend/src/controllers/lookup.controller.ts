@@ -15,7 +15,7 @@ export async function createLookupHandler(req: Request, res: Response) {
             return sendResponse(res, 400, false, "Type, code and label fields are required")
         }
 
-        if(!["GRADE", "SUBJECT", "SEMESTER"].includes(type)) {
+        if(!["GRADE", "SUBJECT", "SEMESTER", "SECTION"].includes(type)) {
             return sendResponse(res, 400, false, "Invalid Type")
         }
 
@@ -36,7 +36,7 @@ export async function listLookupHandler(req: Request, res: Response) {
     try {
         const type = req.params.type as LookupType
 
-        if(!["GRADE", "SUBJECT", "SEMESTER"].includes(type)) {
+        if(!["GRADE", "SUBJECT", "SEMESTER", "SECTION"].includes(type)) {
             return sendResponse(res, 400, false, "Invalid Type")
         }
 

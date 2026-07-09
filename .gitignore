@@ -1,0 +1,17 @@
+# IDE and Agent configuration directories
+.claude/
+
+# Node dependency directories
+node_modules/
+
+# Local configuration and secret environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+out/
+bin/
+obj/

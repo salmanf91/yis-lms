@@ -7,11 +7,13 @@ import {
     updateLessonPlanHandler,
     rejectLessonPlanHandler,
     listLessonPlanHandler,
-    getlessonPlanHandler
+    getlessonPlanHandler,
+    importWeeklyPlansHandler
 } from "../controllers/lessonPlan.controller";
 
 const router = Router();
 
+router.post("/import", authMiddleware, isAdmin, importWeeklyPlansHandler);
 router.post("/", authMiddleware, isTeacher, createLessonPlanHandler);
 router.put("/:id", authMiddleware, isTeacher, updateLessonPlanHandler);
 router.patch("/:id/submit", authMiddleware, isTeacher, submitLessonPlanHandler);

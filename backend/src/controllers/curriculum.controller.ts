@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { sendResponse } from "../utils/sendResponse";
-import { createCurriculum, listCurriculum, updateCurriculum, getCurriculumById, decactivateCurriculum, deleteCurriculum } from "../services/curriculum.service";
+import { createCurriculum, listCurriculum, updateCurriculum, getCurriculumById, decactivateCurriculum, deleteCurriculum, bulkCreateCurriculum, validateBulkCurriculum, bulkUpdateStandard, bulkDeactivateStandard, bulkDeleteStandard, reactivateCurriculum, bulkReactivateStandard } from "../services/curriculum.service";
 
 /**
  * POST /api/curriculum
@@ -61,13 +61,16 @@ export async function createCurriculumHandler( req: Request, res: Response) {
  */
 export async function listCurriculumHandler(req: Request, res: Response) {
     try {
-        const { gradeId, subjectId, semesterId, weekNo } = req.query;
+        const { gradeId, subjectId, semesterId, weekNo, isActive, page, limit } = req.query;
 
         const data = await listCurriculum({
             gradeId: gradeId as string | undefined,
             subjectId: subjectId as string | undefined,
             semesterId: semesterId as string | undefined,
-            weekNo: weekNo ? Number(weekNo) : undefined
+            weekNo: weekNo ? Number(weekNo) : undefined,
+            isActive: isActive as string | undefined,
+            page: page ? Number(page) : 1,
+            limit: limit ? Number(limit) : 50,
         });
 
         return sendResponse(res, 200, true, "Curriculum list", data)
@@ -128,6 +131,53 @@ export async function deleteCurriculumHandler(req: Request, res: Response) {
     }
 }
 
+/**
+ * POST /api/curriculum/bulk
+ * Admin: bulk-create curriculum rows from parsed Excel
+ */
+export async function bulkCreateCurriculumHandler(req: Request, res: Response) {
+    try {
+        const { rows } = req.body;
+        if (!Array.isArray(rows) || rows.length === 0) {
+            return sendResponse(res, 400, false, "rows array is required");
+        }
+        const required = ['gradeId','subjectId','semesterId','weekNo','standardCode','standardDescription','skills','input','process','outcome'];
+        for (const [i, row] of rows.entries()) {
+            for (const field of required) {
+                if (!row[field]) return sendResponse(res, 400, false, `Row ${i + 1}: missing field "${field}"`);
+            }
+        }
+        const result = await bulkCreateCurriculum(rows);
+        return sendResponse(res, 201, true, `${result.length} curriculum entries imported`, { count: result.length });
+    } catch (err: any) {
+        console.error(err);
+        return sendResponse(res, 500, false, "Internal Server Error");
+    }
+}
+
+export async function validateBulkCurriculumHandler(req: Request, res: Response) {
+    try {
+        const { rows } = req.body;
+        if (!Array.isArray(rows)) {
+            return sendResponse(res, 400, false, "rows array is required");
+        }
+        if (rows.length === 0) {
+            return sendResponse(res, 200, true, "Validation complete", { duplicates: [], valid: [] });
+        }
+        const required = ['gradeId','subjectId','semesterId','weekNo','standardCode'];
+        for (const [i, row] of rows.entries()) {
+            for (const field of required) {
+                if (!row[field]) return sendResponse(res, 400, false, `Row ${i + 1}: missing field "${field}"`);
+            }
+        }
+        const result = await validateBulkCurriculum(rows);
+        return sendResponse(res, 200, true, "Validation complete", result);
+    } catch (err: any) {
+        console.error(err);
+        return sendResponse(res, 500, false, "Internal Server Error");
+    }
+}
+
 export async function decactivateCurriculumHandler(req: Request, res: Response) {
     try {
         const { id } = req.params;
@@ -137,6 +187,84 @@ export async function decactivateCurriculumHandler(req: Request, res: Response) 
         }
         return sendResponse(res, 200, true, "Curriculum deactivated", deactivate);
     } catch(error) {
+        console.error(error);
+        return sendResponse(res, 500, false, "Internal Server Error");
+    }
+}
+
+export async function bulkUpdateStandardHandler(req: Request, res: Response) {
+    try {
+        const { gradeId, subjectId, semesterId, oldCode, newCode, newDescription } = req.body;
+        if (!gradeId || !subjectId || !semesterId || !oldCode || !newCode || !newDescription) {
+            return sendResponse(res, 400, false, "All fields are required");
+        }
+
+        const result = await bulkUpdateStandard(
+            { gradeId, subjectId, semesterId, standardCode: oldCode },
+            { standardCode: newCode, standardDescription: newDescription }
+        );
+
+        return sendResponse(res, 200, true, "Standard updated successfully in bulk", result);
+    } catch (error) {
+        console.error(error);
+        return sendResponse(res, 500, false, "Internal Server Error");
+    }
+}
+
+export async function bulkDeactivateStandardHandler(req: Request, res: Response) {
+    try {
+        const { gradeId, subjectId, semesterId, standardCode } = req.body;
+        if (!gradeId || !subjectId || !semesterId || !standardCode) {
+            return sendResponse(res, 400, false, "All fields are required");
+        }
+
+        const result = await bulkDeactivateStandard({ gradeId, subjectId, semesterId, standardCode });
+        return sendResponse(res, 200, true, "Standard deactivated successfully in bulk", result);
+    } catch (error) {
+        console.error(error);
+        return sendResponse(res, 500, false, "Internal Server Error");
+    }
+}
+
+export async function bulkDeleteStandardHandler(req: Request, res: Response) {
+    try {
+        const { gradeId, subjectId, semesterId, standardCode } = req.body;
+        if (!gradeId || !subjectId || !semesterId || !standardCode) {
+            return sendResponse(res, 400, false, "All fields are required");
+        }
+
+        const result = await bulkDeleteStandard({ gradeId, subjectId, semesterId, standardCode });
+        return sendResponse(res, 200, true, "Standard deleted successfully in bulk", result);
+    } catch (error) {
+        console.error(error);
+        return sendResponse(res, 500, false, "Internal Server Error");
+    }
+}
+
+export async function reactivateCurriculumHandler(req: Request, res: Response) {
+    try {
+        const { id } = req.params;
+        const reactivate = await reactivateCurriculum(id);
+        if (!reactivate) {
+            return sendResponse(res, 404, false, "Curriculum not found");
+        }
+        return sendResponse(res, 200, true, "Curriculum reactivated", reactivate);
+    } catch (error) {
+        console.error(error);
+        return sendResponse(res, 500, false, "Internal Server Error");
+    }
+}
+
+export async function bulkReactivateStandardHandler(req: Request, res: Response) {
+    try {
+        const { gradeId, subjectId, semesterId, standardCode } = req.body;
+        if (!gradeId || !subjectId || !semesterId || !standardCode) {
+            return sendResponse(res, 400, false, "All fields are required");
+        }
+
+        const result = await bulkReactivateStandard({ gradeId, subjectId, semesterId, standardCode });
+        return sendResponse(res, 200, true, "Standard reactivated successfully in bulk", result);
+    } catch (error) {
         console.error(error);
         return sendResponse(res, 500, false, "Internal Server Error");
     }
