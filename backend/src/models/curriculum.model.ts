@@ -39,7 +39,11 @@ const curriculumSchema = new Schema<CurriculumDocument> (
     }
 )
 
-export const CurriculumModel = model<CurriculumDocument> (
+// Compound indexes for common query patterns
+curriculumSchema.index({ isActive: 1, gradeId: 1, subjectId: 1, semesterId: 1 });
+curriculumSchema.index({ isActive: 1, weekNo: 1 });
+
+export const CurriculumModel = model<CurriculumDocument>(
     "Curriculum",
     curriculumSchema
 )

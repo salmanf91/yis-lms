@@ -19,6 +19,10 @@ export async function connectDb() {
     });
 
 
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(MONGODB_URI, {
+        maxPoolSize: 20,          // Allow up to 20 concurrent connections
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+    });
     console.log("Connected to MongoDB")
 }

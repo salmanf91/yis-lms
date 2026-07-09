@@ -9,7 +9,8 @@ import {
     submitLessonPlan,
     approveLessonPlan,
     rejectLessonPlan,
-    deactivateLessonPlan
+    deactivateLessonPlan,
+    bulkImportWeeklyPlans
 } from "../services/lessonPlan.service";
 
 export async function createLessonPlanHandler(req: AuthRequest, res: Response) {
@@ -121,6 +122,37 @@ export async function deactivateLessonPlanHandler(req: AuthRequest, res: Respons
         return sendResponse(res, 200, true, "Lesson plan deactivated", deactivated);
     } catch(error) {
         console.error(error);
+        return sendResponse(res, 500, false, "Internal Server Error");
+    }
+}
+
+/**
+ * POST /api/lesson-plans/import
+ * Admin: bulk-import weekly plan data from Master_DB Excel
+ */
+export async function importWeeklyPlansHandler(req: AuthRequest, res: Response) {
+    try {
+        const { rows } = req.body;
+        if (!Array.isArray(rows) || rows.length === 0) {
+            return sendResponse(res, 400, false, "rows array is required");
+        }
+        const required = ['gradeLabel','subjectLabel','semesterLabel','weekNo'];
+        for (const [i, row] of rows.entries()) {
+            for (const field of required) {
+                if (!row[field]) return sendResponse(res, 400, false, `Row ${i + 1}: missing field "${field}"`);
+            }
+            // At least one content field must be present
+            if (!row.topic && !row.resource && !row.assessment) {
+                return sendResponse(res, 400, false, `Row ${i + 1}: must have at least one of topic, resource, or assessment`);
+            }
+        }
+        const result = await bulkImportWeeklyPlans(rows, req.user!.userId);
+        return sendResponse(res, 201, true,
+            `Import complete: ${result.created} lesson plan entries created/updated, ${result.skipped} skipped`,
+            result
+        );
+    } catch (err: any) {
+        console.error(err);
         return sendResponse(res, 500, false, "Internal Server Error");
     }
 }
