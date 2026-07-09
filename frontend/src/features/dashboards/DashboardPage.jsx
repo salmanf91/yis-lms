@@ -40,10 +40,11 @@ function AdminDashboard() {
     queryFn: getAdminSummary,
   })
 
-  const { data: plans = [], isLoading: plansLoading } = useQuery({
+  const { data: plansRaw = [], isLoading: plansLoading } = useQuery({
     queryKey: ['lessonPlans', {}],
     queryFn: () => getLessonPlans({ limit: 100 }).then(r => r.data || r),
   })
+  const plans = Array.isArray(plansRaw) ? plansRaw : (plansRaw?.data || [])
 
   const { weekNo: academicWeek } = useCurrentAcademicWeek()
   const isLoading = summaryLoading || plansLoading
@@ -129,10 +130,11 @@ function HodDashboard() {
     enabled: !!(user?.userId || user?.id),
   })
 
-  const { data: plans = [] } = useQuery({
+  const { data: plansRaw = [] } = useQuery({
     queryKey: ['lessonPlans', { status: 'SUBMITTED' }],
     queryFn: () => getLessonPlans({ status: 'SUBMITTED', limit: 100 }).then(r => r.data || r),
   })
+  const plans = Array.isArray(plansRaw) ? plansRaw : (plansRaw?.data || [])
 
   const submitted = summary?.submitted ?? plans.filter(p => p.status === 'SUBMITTED').length
   const approved = summary?.approved ?? 0
@@ -186,11 +188,12 @@ function TeacherDashboard() {
   const navigate = useNavigate()
   const { weekNo: currentWeek } = useCurrentAcademicWeek()
 
-  const { data: plans = [], isLoading } = useQuery({
+  const { data: plansRaw = [], isLoading } = useQuery({
     queryKey: ['lessonPlans', { teacherId: (user?.userId || user?.id) }],
     queryFn: () => getLessonPlans({ teacherId: (user?.userId || user?.id), limit: 100 }).then(r => r.data || r),
     enabled: !!(user?.userId || user?.id),
   })
+  const plans = Array.isArray(plansRaw) ? plansRaw : (plansRaw?.data || [])
 
   const { data: roster = [] } = useQuery({
     queryKey: ['roster', { teacherId: (user?.userId || user?.id) }],
